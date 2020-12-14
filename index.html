@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="index.css">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+
+<body>
+    <script>
+        const dataUrl = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/global-temperature.json';
+
+        d3.json(dataUrl).then(function (data) {
+
+            const margin = {
+                top: 20,
+                right: 60,
+                bottom: 40,
+                left: 80
+            };
+
+            const baseTemp = 8.66;
+
+            // max hue value for HSL color scale. 150 gives a range of green-red that is fairly readable
+            const tempScale = 150;
+
+            const w = 1200 - margin.left - margin.right;
+            const h = 400 - margin.top - margin.bottom;
+
+
+            var year = data.monthlyVariance.map((d) => d.year);
+            var month = data.monthlyVariance.map((d) => d.month);
+            var temp = data.monthlyVariance.map((d) => d.variance + baseTemp);
+
+            // scale color based on ratio of current temp to max temp, green-red in hue portion of HSV
+            var tempToHSL = (input) => {
+                return d3.hsl((tempScale * (d3.max(temp) - input) / d3.max(temp)), 1, .45);
+            }
+
+            var tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+            const xScale = d3.scaleLinear()
+                .domain([d3.min(year), d3.max(year)])
+                .range([0, w]);
+
+            const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
+
+            const yScale = d3.scaleTime()
+                .domain([new Date().setMonth(11), new Date().setMonth(0)])
+                .range([h, 0]);
+
+            // make a array of length 12 full of nulls, then map month of index (0-11) to each null 
+            const tickValues = Array(12).fill(null).map((val, index) => new Date().setMonth(index));
+
+            const yAxis = d3.axisLeft(yScale)
+                .tickValues(tickValues)
+                .tickFormat(d3.timeFormat("%B"));
+
+            var section = d3.select('body').append('section');
+
+            var heading = section.append('heading');
+            heading.append('h1')
+                .attr('id', 'title')
+                .text('Monthly Global Land-Surface Temperature');
+            heading.append('h3')
+                .attr('id', 'description')
+                .html(year[0] + ' - ' + year[year.length - 1] + ': Base Temperature: ' + baseTemp + " deg C");
+
+            const svg = d3.select("body")
+                .append("svg")
+                .attr("width", w + margin.left + margin.right)
+                .attr("height", h + margin.top + margin.bottom)
+                .attr("class", "graph")
+                .append('g')
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+            svg.selectAll("rect")
+                .data(data.monthlyVariance)
+                .enter()
+                .append("rect")
+                .attr("class", "cell")
+                .attr("data-month", (d) => d.month-1)
+                .attr("data-year", (d) => d.year)
+                .attr("data-temp", (d) => d.variance)
+                .attr("fill", (d, i) => tempToHSL(d.variance + baseTemp))
+                .attr("x", (d, i) => xScale(year[i]))
+                .attr("y", (d, i) => yScale(new Date().setMonth(month[i] - 1)))
+                .attr("width", w * 12 / year.length)
+                .attr("height", h / 11)
+                .attr("data-xvalue", (d, i) => (year[i]))
+                .attr("data-yvalue", (d, i) => (month[i]))
+                .on("mousemove", (e) => {
+                    tooltip
+                        .style("top", (e.pageY - 10) + "px")
+                        .style("left", (e.pageX + 10) + "px");
+                })
+                .on("mouseover", (d, i) => {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    tooltip.html("Year: " + i.year + "<br/>Month: " + i.month + "<br/>Variance: " + i.variance)
+                        .attr("id", "tooltip")
+                        .attr("data-year", i.year)
+                        .style("background-color", "#665c54");
+                })
+
+                .on("mouseout", (d) => {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0)
+                });
+
+            svg.append("g")
+                .attr("class", "tick")
+                .attr("id", "x-axis")
+                .attr("transform", "translate(0, " + h + ")")
+                .attr("stroke-width", 2)
+                .call(xAxis);
+
+            svg.append("g")
+                .attr("class", "tick")
+                .attr("id", "y-axis")
+                .attr("stroke-width", 2)
+                .call(yAxis);
+            
+            // make array of [1...8]*legendSquareWidth
+            const legendSquareWidth = w/20;
+            var legendSquares = [...Array(8).keys()].map(i=>(i+1)*(d3.max(temp)/9)); 
+
+            const legendTitle = d3.select("body").append("section")
+                .append("h2")
+                .text("Legend");
+
+            const legend = d3.select("body").append("svg")
+                .attr("id", "legend")
+                .attr("width", w)
+                .attr("height", h/4);
+
+            legend.selectAll("rect")
+                .data(legendSquares)
+                .enter()
+                .append("rect")
+                .attr("class", "legend")
+                .attr("width", legendSquareWidth)
+                .attr("height", legendSquareWidth)
+                .style("fill", d => tempToHSL(d))
+                .attr("y", 0)
+                .attr("x", (d,i) => w/3.5+i*legendSquareWidth);
+            legend.selectAll("text")
+                .data(legendSquares)
+                .enter()
+                .append("text")
+                .text((d) => d.toFixed(0))
+                .attr("y", 15)
+                .attr("x", (d,i) => w/3.5+i*legendSquareWidth + legendSquareWidth/3);
+        });
+    </script>
+
+</body>
+
+</html>

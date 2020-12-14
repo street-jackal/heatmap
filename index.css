@@ -1,0 +1,57 @@
+
+  body {
+    text-align: center;
+    font-family: "Helvetica", sans-serif;
+  }
+
+  .graph {
+    display: block;
+    margin: auto;
+    background-color: white;
+  }
+
+  .legend-title{
+    text-decoration: underline;
+    font-weight: bold;
+  }
+
+  h1 {
+    font-size: 2em;
+    font-weight: bold;
+  }
+
+  h2{
+    text-align: center;
+    margin-bottom: 0;
+    font-size: 1.5em;
+    font-weight: bold;
+  }
+
+  .cell {
+    stroke-width: 0;
+  }
+
+.cell:hover{
+  stroke-width: 1;
+  stroke: black;
+}
+.legend{
+  stroke-width: 2;
+  stroke: black;
+  fill: white;
+}
+.tick{
+  font: 12px sans-serif;
+}
+
+div.tooltip {	
+    position: absolute;			
+    text-align: left;			
+    width: 100px;					
+    height: 45px;					
+    padding: 5px;				
+    font: 12px sans-serif;		
+    border: 2px solid black;		
+    border-radius: 8px;			
+    pointer-events: all;			
+}
